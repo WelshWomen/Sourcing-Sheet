@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Outil de Sourcing de Talents</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Style pour une meilleure apparence du sélecteur */
+        select {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='1.5' stroke='%236b7280' class='w-6 h-6'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M8.25 15L12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9' /%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 1.5em 1.5em;
+            padding-right: 2.5rem;
+        }
+        /* Style pour l'effet de paillettes */
+        .glitter {
+            position: fixed; /* Position par rapport à la fenêtre */
+            border-radius: 50%;
+            pointer-events: none; /* Les paillettes ne sont pas cliquables */
+            animation: explode 0.8s ease-out forwards;
+            z-index: 9999;
+        }
+
+        @keyframes explode {
+            from {
+                transform: translate(0, 0) scale(1);
+                opacity: 1;
+            }
+            to {
+                /* Les variables --tx et --ty sont définies en JavaScript */
+                transform: translate(var(--tx), var(--ty)) scale(0);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="container mx-auto p-4 sm:p-6 md:p-8 max-w-3xl">
+        
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Générateur de Recherche de Talents</h1>
+            <p class="mt-2 text-md text-gray-600">Créez des requêtes de sourcing ciblées en quelques clics.</p>
+        </header>
+
+        <main class="bg-white p-6 sm:p-8 rounded-2xl shadow-lg">
+            <form id="sourcing-form" class="space-y-6">
+                <!-- Section des champs de recherche -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="job-title" class="block text-sm font-medium text-gray-700 mb-2">Intitulé de poste</label>
+                        <select id="job-title" class="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150"></select>
+                    </div>
+                    <div>
+                        <label for="location" class="block text-sm font-medium text-gray-700 mb-2">Localisation</label>
+                         <select id="location" class="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150"></select>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="keywords" class="block text-sm font-medium text-gray-700 mb-2">Technologies / Mots-clés</label>
+                    <select id="keywords" class="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150"></select>
+                </div>
+
+                <div>
+                    <label for="site" class="block text-sm font-medium text-gray-700 mb-2">Plateforme à cibler</label>
+                    <select id="site" class="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150">
+                        <option value="site:linkedin.com/in/">LinkedIn Profiles</option>
+                        <option value="site:stackoverflow.com/users">Stack Overflow Users</option>
+                        <option value="site:github.com">GitHub</option>
+                        <option value="site:viadeo.journaldunet.com/p/">Viadeo Profiles</option>
+                        <option value="inurl:cv">CVs (inurl:cv)</option>
+                    </select>
+                </div>
+
+                <!-- Bouton de génération -->
+                <div class="pt-2">
+                    <button type="submit" class="w-full bg-blue-600 text-white p-4 rounded-lg font-semibold hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 transition-transform transform hover:scale-105 duration-300 ease-in-out">
+                        Générer les liens de recherche
+                    </button>
+                </div>
+            </form>
+
+            <!-- Section des résultats -->
+            <div id="results" class="mt-10">
+                <!-- Les liens générés apparaîtront ici -->
+            </div>
+        </main>
+        
+        <footer class="text-center mt-8">
+            <p class="text-sm text-gray-500">Adapté du Sourcing Sheet de Lito.</p>
+        </footer>
+
+    </div>
+
+    <script>
+        // --- Base de données extraite de votre fichier ---
+        const db = {
+            jobTitles: [
+                "Agile Backend developer", "Application Developer", "Codeur", "Concepteur développeur", 
+                "Consultant", "Developer", "Developer Web", "Developper", "Developpement", 
+                "Développeur", "Devloper", "Web Developer"
+            ],
+            locations: [
+                "Arras", "Berck", "Calais", "Cambrai", "Douai", "Hauts-de-France", "Le touquet", 
+                "Lille", "Nord Pas-de-Calais", "Pas-de-Calais", "Saint-Pol-Sur-Ternoise", "Valenciennes"
+            ],
+            technologies: {
+                "Stacks dév": [
+                    "Boot", "Hibernate", "J2EE", "Java", "Java 11", "Java 8", "JEE", 
+                    "Maven", "MVS", "Spring", "SpringBoot"
+                ],
+                "Stacks data": [
+                    "Aurora", "Cloud SQL", "DynamoDB", "MariaDB", "MySQL", "Oracle", 
+                    "PostgreSQL", "Redis", "SQL", "SQL Server"
+                ],
+                "Cloud": [
+                    "Amazon Kinesis", "Amazon RDS", "Amazon Web Services", "Anthos", "AWS", 
+                    "AWS Lambda Function", "Cloud Dataflow", "GCP", "Google Cloud Functions", 
+                    "Google Cloud Platform"
+                ]
+            }
+        };
+
+        // Attend que le contenu de la page soit entièrement chargé
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('sourcing-form');
+            const resultsDiv = document.getElementById('results');
+            const submitButton = document.querySelector('#sourcing-form button[type="submit"]');
+
+            // --- Fonction pour l'effet de paillettes ---
+            const createGlitter = (e) => {
+                const x = e.clientX; // Position x du clic sur la page
+                const y = e.clientY; // Position y du clic sur la page
+
+                // Crée 30 particules de paillettes
+                for (let i = 0; i < 30; i++) {
+                    const glitter = document.createElement('div');
+                    glitter.classList.add('glitter');
+
+                    const size = Math.random() * 6 + 2; // Taille entre 2px et 8px
+                    glitter.style.width = `${size}px`;
+                    glitter.style.height = `${size}px`;
+                    // Nuances de bleu aléatoires
+                    glitter.style.backgroundColor = `hsl(205, 80%, ${Math.random() * 30 + 50}%)`;
+
+                    // Positionne la paillette à l'endroit du clic
+                    glitter.style.left = `${x}px`;
+                    glitter.style.top = `${y}px`;
+
+                    // Calcule une destination finale aléatoire pour l'explosion
+                    const randomX = (Math.random() - 0.5) * 250;
+                    const randomY = (Math.random() - 0.5) * 250;
+
+                    // Définit les variables CSS pour l'animation
+                    glitter.style.setProperty('--tx', `${randomX}px`);
+                    glitter.style.setProperty('--ty', `${randomY}px`);
+                    glitter.style.animationDuration = `${Math.random() * 0.5 + 0.5}s`;
+
+                    document.body.appendChild(glitter);
+
+                    // Supprime la paillette du DOM à la fin de l'animation
+                    glitter.addEventListener('animationend', () => {
+                        glitter.remove();
+                    });
+                }
+            };
+
+            // --- Fonctions pour peupler les menus déroulants ---
+            const populateSimpleSelect = (selectId, dataArray) => {
+                const select = document.getElementById(selectId);
+                select.innerHTML = '';
+                dataArray.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item;
+                    option.textContent = item;
+                    select.appendChild(option);
+                });
+            };
+
+            const populateGroupedSelect = (selectId, dataObject) => {
+                const select = document.getElementById(selectId);
+                select.innerHTML = '';
+                for (const groupLabel in dataObject) {
+                    const optgroup = document.createElement('optgroup');
+                    optgroup.label = groupLabel;
+                    dataObject[groupLabel].forEach(item => {
+                        const option = document.createElement('option');
+                        option.value = item;
+                        option.textContent = item;
+                        optgroup.appendChild(option);
+                    });
+                    select.appendChild(optgroup);
+                }
+            };
+
+            populateSimpleSelect('job-title', db.jobTitles);
+            populateSimpleSelect('location', db.locations);
+            populateGroupedSelect('keywords', db.technologies);
+            
+            // --- Logique de génération des liens ---
+            const generateLinks = (event) => {
+                if (event) {
+                    event.preventDefault(); // Empêche le rechargement de la page
+                }
+
+                const jobTitle = document.getElementById('job-title').value.trim();
+                const location = document.getElementById('location').value.trim();
+                const keywords = document.getElementById('keywords').value.trim();
+                const site = document.getElementById('site').value;
+
+                const queryParts = [site, `"${location}"`, `"${jobTitle}"`, keywords].filter(Boolean);
+                const query = queryParts.join(' ');
+                const encodedQuery = encodeURIComponent(query);
+
+                const searchEngines = [
+                    { name: 'Google', url: `https://www.google.com/search?q=${encodedQuery}`, icon: 'G' },
+                    { name: 'Bing', url: `https://www.bing.com/search?q=${encodedQuery}`, icon: 'B' },
+                    { name: 'DuckDuckGo', url: `https://duckduckgo.com/?q=${encodedQuery}`, icon: 'D' }
+                ];
+                
+                resultsDiv.innerHTML = '';
+
+                if (query) {
+                    const title = document.createElement('h2');
+                    title.className = 'text-2xl font-bold text-gray-800 mb-4 text-center';
+                    title.textContent = 'Vos liens de recherche';
+                    resultsDiv.appendChild(title);
+
+                    const linksContainer = document.createElement('div');
+                    linksContainer.className = 'space-y-4';
+                    
+                    searchEngines.forEach(engine => {
+                        const linkCard = `
+                            <a href="${engine.url}" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between bg-gray-50 p-4 rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-300 transition duration-200 group">
+                                <div class="flex items-center">
+                                    <span class="flex items-center justify-center h-8 w-8 rounded-full bg-gray-200 text-gray-600 font-bold mr-4 group-hover:bg-blue-100 group-hover:text-blue-600">${engine.icon}</span>
+                                    <span class="font-medium text-gray-700 group-hover:text-blue-800">${engine.name} Search</span>
+                                </div>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 group-hover:text-blue-500" fill="none" viewBox="0 0 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                </svg>
+                            </a>
+                        `;
+                        linksContainer.innerHTML += linkCard;
+                    });
+
+                    resultsDiv.appendChild(linksContainer);
+                }
+            };
+
+            // Ajoute les écouteurs d'événements
+            form.addEventListener('submit', generateLinks);
+            submitButton.addEventListener('click', createGlitter); // Ajout de l'effet au clic
+            form.querySelectorAll('select').forEach(select => {
+                select.addEventListener('change', () => generateLinks(null)); // Met à jour sans recharger
+            });
+            
+            generateLinks(null); // Génère les liens au chargement initial
+        });
+    </script>
+</body>
+</html>
